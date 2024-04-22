@@ -80,19 +80,6 @@ clean_info_dict
 ### Replacing names for consistency
 
 ```{r}
-# replacement_rules <- list(
-#   "Coahuila de Zaragoza" = "Coahuila",
-#   "Michoacán de Ocampo" = "Michoacán",
-#   "Veracruz de Ignacio de la Llave" = "Veracruz"
-# )
-# 
-# df_new_names <- df |> 
-#     mutate(NOM_ENT = case_when(
-#       NOM_ENT %in% names(replacement_rules) ~ replacement_rules[NOM_ENT],
-#       TRUE ~ NOM_ENT
-#   ))
-
-
 replacement_dict <- c(
   "Coahuila de Zaragoza" = "Coahuila",
   "Michoacán de Ocampo" = "Michoacán",
