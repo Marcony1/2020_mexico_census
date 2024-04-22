@@ -131,14 +131,21 @@ ggplot() +
   coord_map()
 ```
 
-### Read Puebla Municipalities
+### Municipality
 
 ```{r}
-ds_puebla <- open_dataset(here("data", "processed", "parquet_data_coords")) |>
-    filter(NOM_ENT=="Puebla") |> 
-    collect()
+red_point <- data.frame(long = -98.2035, lat = 19.0414)
 
-ds_puebla
+filtered_geojson <- geojson_file |> 
+  filter(name == "Puebla")
+
+ggplot() +
+  geom_polygon(data = filtered_geojson,
+               aes(x = long, y = lat, group = group),
+               fill = "lightgray", color = "white") +
+  geom_point(data = red_point, aes(x = long, y = lat), color = "red", size = 3) +
+  theme_void() +
+  coord_map()
 ```
 
 ### Test geom_point
@@ -193,3 +200,5 @@ ggplot() +
   theme_void() +
   coord_map()
 ```
+
+### Note: Create a for loop to see if cities are unique for every state
