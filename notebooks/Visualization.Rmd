@@ -106,11 +106,28 @@ geojson_file <- geojson_read("../data/processed/mexico.geojson",  what = "sp")
 #   )
 ```
 
+### Country
+
 ```{r}
 ggplot() +
   geom_polygon(data = geojson_file,
                aes(x = long, y = lat, group = group),
-               fill="darkgreen", color="white") +
+               fill="lightgray", color="white") +
+  theme_void() +
+  coord_map()
+```
+
+### States
+
+```{r}
+
+filtered_geojson <- geojson_file |> 
+  filter(name == "Puebla")
+
+ggplot() +
+  geom_polygon(data = filtered_geojson,
+               aes(x = long, y = lat, group = group),
+               fill="lightgray", color="white") +
   theme_void() +
   coord_map()
 ```
