@@ -1,0 +1,216 @@
+---
+title: "R Notebook"
+output: html_notebook
+author: Marco Polo Bravo Montiel
+date: 2020-04-21
+---
+
+## Visualizations
+
+### Libraries
+
+```{r}
+# if (!require("renv")) install.packages("renv")
+# library(renv)
+# renv::restore()
+library(here)
+library(dplyr)
+library(readr)
+library(arrow)
+library(rgdal)
+library(spdplyr)
+library(geojsonio)
+library(rmapshaper)
+# library(leaflet)
+# library(sf)
+library(plotly)
+library(ggplot2)
+```
+
+### Data Reading
+
+```{r}
+# gdf = read_csv('../data/raw/ne_10m_admin_1_states_provinces/ne_10m_admin_1_states_provinces.shp')
+
+countries <- readOGR(dsn = "../data/raw/ne_10m_admin_1_states_provinces",
+                     layer = "ne_10m_admin_1_states_provinces", verbose = FALSE)
+
+```
+
+### Data filtering
+
+```{r}
+# mexico <- countries[countries$iso_a2 == "MX", ]
+mexico <- countries |>  
+  filter(iso_a2 == "MX")
+head(mexico@data)
+```
+
+```{r}
+class(mexico)
+```
+
+```{r}
+mexico_json <- geojson_json(mexico)
+```
+
+```{r}
+class(mexico_json)
+```
+
+```{r}
+geojson_write(mexico_json, file = "../data/processed/mexico.geojson")
+```
+
+### Reading geojson
+
+```{r}
+geojson_file <- geojson_read("../data/processed/mexico.geojson",  what = "sp")
+```
+
+### Plotting
+
+```{r}
+# plot(mexico)
+```
+
+```{r}
+# ggplot() +
+#       geom_polygon(data = mexico, aes(x = longitude,
+#                        y = latitude,
+#                        group = group),
+#                    colour = "black") +
+#       theme_void()
+
+# mexico_map <- ggplot() + 
+#       geom_polygon(data = mexico, aes(x = long, y = lat, group = group), colour = "black", fill = NA)
+```
+
+```{r}
+# shapes <- st_read("../data/raw/ne_10m_admin_1_states_provinces/ne_10m_admin_1_states_provinces.shp")
+# shapes <- merge(shapes, dataset, by.x = 'ISO3', by.y = 'Country.Code')
+```
+
+```{r}
+# leaflet(shapes) |> 
+#   addTiles() |> 
+#   setView(lng = -102, lat = 23, zoom = 5) |>   # Adjust center and zoom level
+#   addPolygons(
+#     data = shapes,
+#     fillColor = "blue",  # Fixed fill color (replace with your desired attribute)
+#     fillOpacity = 0.7,
+#     color = "black",
+#     weight = 1,
+#     opacity = 1,
+#     popup = ~admin
+#   )
+```
+
+### Country
+
+```{r}
+ggplot() +
+  geom_polygon(data = geojson_file,
+               aes(x = long, y = lat, group = group),
+               fill="lightgray", color="white") +
+  theme_void() +
+  coord_map()
+```
+
+### States
+
+```{r}
+filtered_geojson <- geojson_file |> 
+  filter(name == "Puebla")
+
+ggplot() +
+  geom_polygon(data = filtered_geojson,
+               aes(x = long, y = lat, group = group),
+               fill="lightgray", color="white") +
+  theme_void() +
+  coord_map()
+```
+
+### Municipality
+
+```{r}
+red_point <- data.frame(long = -98.2035, lat = 19.0414)
+
+filtered_geojson <- geojson_file |> 
+  filter(name == "Puebla")
+
+ggplot() +
+  geom_polygon(data = filtered_geojson,
+               aes(x = long, y = lat, group = group),
+               fill = "lightgray", color = "white") +
+  geom_point(data = red_point, aes(x = long, y = lat), color = "red", size = 3) +
+  theme_void() +
+  coord_map()
+```
+
+### Test geom_point
+
+```{r}
+red_point <- data.frame(long = -98.2035, lat = 19.0414)
+
+filtered_geojson <- geojson_file |> 
+  filter(name == "Puebla")
+
+ggplot() +
+  geom_polygon(data = filtered_geojson,
+               aes(x = long, y = lat, group = group),
+               fill = "lightgray", color = "white") +
+  geom_point(data = red_point, aes(x = long, y = lat), color = "red", size = 3) +
+  theme_void() +
+  coord_map()
+```
+
+### From INEGI dataset
+
+```{r}
+ds_puebla <- open_dataset(here("data", "processed", "parquet_data_coords")) |>
+    filter(NOM_ENT=="Puebla") |> 
+    collect()
+
+ds_puebla
+```
+
+```{r}
+
+extract_coordinates <- function(data, municipality, locality) {
+  selected_location <- data |> 
+    filter(NOM_MUN == municipality, NOM_LOC == locality)
+  
+  coordinates <- data.frame(
+    long = selected_location$longitude_decimal,
+    lat = selected_location$latitude_decimal
+  )
+  
+  return(coordinates)
+}
+
+
+municipality <- "Acajete"
+locality <- "San Javier"
+
+red_point <- extract_coordinates(ds_puebla, municipality, locality)
+
+# red_point <- data.frame(long = -98.2035, lat = 19.0414)
+
+filtered_geojson <- geojson_file |> 
+  filter(name == "Puebla")
+
+ggplot() +
+  geom_polygon(data = filtered_geojson,
+               aes(x = long, y = lat, group = group),
+               fill = "lightgray", color = "white") +
+  geom_point(data = red_point, aes(x = long, y = lat), color = "red", size = 3) +
+  theme_void() +
+  coord_map()
+```
+
+### Analyze names of States
+
+```{r}
+unique(geojson_file$name)
+```
