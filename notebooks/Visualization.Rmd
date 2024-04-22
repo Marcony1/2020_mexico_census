@@ -1,0 +1,56 @@
+---
+title: "R Notebook"
+output: html_notebook
+author: Marco Polo Bravo Montiel
+date: 2020-04-21
+---
+
+## Visualizations
+
+### Libraries
+
+```{r}
+if (!require("renv")) install.packages("renv")
+library(renv)
+renv::restore()
+library(here)
+library(dplyr)
+library(readr)
+library(arrow)
+library(rgdal)
+```
+
+### Data Reading
+
+```{r}
+# gdf = read_csv('../data/raw/ne_10m_admin_1_states_provinces/ne_10m_admin_1_states_provinces.shp')
+
+countries <- readOGR(dsn = "../data/raw/ne_10m_admin_1_states_provinces",
+                     layer = "ne_10m_admin_1_states_provinces")
+
+```
+
+### Data filtering
+
+```{r}
+mexico <- countries[countries$iso_a2 == "MX", ]
+head(mexico)
+```
+
+### Plotting
+
+```{r}
+plot(mexico)
+```
+
+```{r}
+ggplot() +
+      geom_polygon(data = mexico, aes(x = longitude,
+                       y = latitude,
+                       group = group),
+                   colour = "black") +
+      theme_void()
+
+# mexico_map <- ggplot() + 
+#       geom_polygon(data = mexico, aes(x = long, y = lat, group = group), colour = "black", fill = NA)
+```
