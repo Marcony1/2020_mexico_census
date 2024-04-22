@@ -42,7 +42,8 @@ countries <- readOGR(dsn = "../data/raw/ne_10m_admin_1_states_provinces",
 ```{r}
 # mexico <- countries[countries$iso_a2 == "MX", ]
 mexico <- countries |>  
-  filter(iso_a2 == "MX")
+  filter(iso_a2 == "MX") |> 
+  mutate(name = ifelse(name == "Distrito Federal", "Ciudad de México", name))
 head(mexico@data)
 ```
 
