@@ -64,5 +64,29 @@ head(info_dict)
 
 ```{r}
 clean_info_dict <- info_dict[-c(1:3), ]
+names(clean_info_dict) <- clean_info_dict[1, ]
+clean_info_dict <- clean_info_dict[-1,]
+clean_info_dict <- clean_info_dict[, -c(7:10)]
+
+
 clean_info_dict
+```
+
+### Selecting rows that we'll analyze
+
+```{r}
+rows_to_include <- c(1:12, 53:132, 136:140, 147, 155:211, 220:232)
+
+filtered_data <- clean_info_dict |> 
+      filter(row_number() %in% rows_to_include) |> 
+      pull(4)
+
+filtered_data
+```
+
+```{r}
+selected_df <- df |> 
+      select(filtered_data)
+
+selected_df
 ```
