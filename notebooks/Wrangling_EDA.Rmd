@@ -14,6 +14,7 @@ renv::restore()
 library(here)
 library(dplyr)
 library(readr)
+library(arrow)
 ```
 
 ### Read data
@@ -72,6 +73,13 @@ clean_info_dict <- clean_info_dict[, -c(7:10)]
 clean_info_dict
 ```
 
+```{r}
+unique_states <- df |> 
+      distinct(NOM_ENT)
+
+unique_states
+```
+
 ### Selecting rows that we'll analyze
 
 ```{r}
@@ -89,4 +97,48 @@ selected_df <- df |>
       select(filtered_data)
 
 selected_df
+```
+
+### Exporting as parquet
+
+```{r}
+# Export wrangled data as parquet file
+table <- arrow::Table$create(selected_df)
+
+output_dir <- here("data", "processed", "parquet_data")
+
+arrow::write_dataset(table, output_dir, partitioning = c("NOM_ENT", "ENTIDAD"), existing_data_behavior = "overwrite")
+```
+
+### Reading parquet
+
+```{r}
+ds <- open_dataset(here("data", "processed", "parquet_data")) |> 
+        collect()
+
+ds
+```
+
+```{r}
+ds_puebla <- open_dataset(here("data", "processed", "parquet_data")) |>
+    filter(NOM_ENT=="Puebla") |> 
+    collect()
+
+ds_puebla
+```
+
+```{r}
+ds_yucatan <- open_dataset(here("data", "processed", "parquet_data")) |>
+    filter(NOM_ENT=="Yucatán") |> 
+    collect()
+
+ds_yucatan
+```
+
+```{r}
+ds_nuevo_leon <- open_dataset(here("data", "processed", "parquet_data")) |>
+    filter(NOM_ENT=="Nuevo León") |> 
+    collect()
+
+ds_nuevo_leon
 ```
