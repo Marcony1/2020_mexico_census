@@ -8,9 +8,9 @@ date: 2020-04-21
 ### Libraries
 
 ```{r}
-if (!require("renv")) install.packages("renv")
-library(renv)
-renv::restore()
+# if (!require("renv")) install.packages("renv")
+# library(renv)
+# renv::restore()
 library(here)
 library(dplyr)
 library(readr)
@@ -196,4 +196,76 @@ for(value in entities_csv) {
   }
 
 }
+```
+
+### Coordinate Lab
+
+```{r}
+longitudes <- selected_df$LONGITUD
+latitudes <- selected_df$LATITUD
+```
+
+```{r}
+test_long <- longitudes[8]
+test_long
+```
+
+```{r}
+sections <- unlist(strsplit(test_long, "[°'\" ]"))
+degrees <- as.numeric(sections[1])
+minutes <- as.numeric(sections[2])
+seconds <- as.numeric(sections[3])
+
+decimal_degrees <- (degrees + minutes / 60 + seconds / 3600) * -1
+decimal_degrees
+```
+
+```{r}
+longitude_to_decimal <- function(test_long) {
+    if (is.na(test_long)) {
+    return(NA)  
+    }
+  
+  sections <- unlist(strsplit(test_long, "[°'\" ]"))
+  
+  degrees <- as.numeric(sections[1])
+  minutes <- as.numeric(sections[2])
+  seconds <- as.numeric(sections[3])
+
+  
+  decimal_degrees <- (degrees + minutes / 60 + seconds / 3600) * -1
+}
+
+latitude_to_decimal <- function(test_lat) {
+    if (is.na(test_lat)) {
+    return(NA)  
+    }
+  
+  sections <- unlist(strsplit(test_lat, "[°'\" ]"))
+  
+  degrees <- as.numeric(sections[1])
+  minutes <- as.numeric(sections[2])
+  seconds <- as.numeric(sections[3])
+
+  
+  decimal_degrees <- (degrees + minutes / 60 + seconds / 3600)
+}
+```
+
+```{r}
+selected_clean <- selected_df |> 
+      mutate(longitude_decimal = sapply(LONGITUD, longitude_to_decimal),
+             latitude_decimal = sapply(LATITUD, latitude_to_decimal))
+
+selected_clean
+```
+
+### Exporting clean
+
+```{r}
+table <- arrow::Table$create(selected_clean)
+
+output_dir <- here("data", "processed", "parquet_data_coords")
+
+arrow::write_dataset(table, output_dir, partitioning = c("NOM_ENT", "ENTIDAD"), existing_data_behavior = "overwrite")
 ```
