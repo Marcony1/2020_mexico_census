@@ -367,6 +367,21 @@
       ],
       "Hash": "9775eb076713f627c07ce41d8199d8f6"
     },
+    "lattice": {
+      "Package": "lattice",
+      "Version": "0.21-8",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "grDevices",
+        "graphics",
+        "grid",
+        "stats",
+        "utils"
+      ],
+      "Hash": "0b8a6d63c8770f02a8b5635f3c431e6b"
+    },
     "lifecycle": {
       "Package": "lifecycle",
       "Version": "1.0.3",
@@ -520,6 +535,22 @@
       ],
       "Hash": "397b7b2a265bc5a7a06852524dabae20"
     },
+    "rgdal": {
+      "Package": "rgdal",
+      "Version": "1.6-7",
+      "Source": "Repository",
+      "Repository": "https://packagemanager.posit.co/cran/2023-10-16",
+      "Requirements": [
+        "R",
+        "grDevices",
+        "graphics",
+        "methods",
+        "sp",
+        "stats",
+        "utils"
+      ],
+      "Hash": "10b777236c9e7855bc9dea8e347e30b7"
+    },
     "rlang": {
       "Package": "rlang",
       "Version": "1.1.1",
@@ -578,6 +609,23 @@
         "rlang"
       ],
       "Hash": "6bd4d33b50ff927191ec9acbf52fd056"
+    },
+    "sp": {
+      "Package": "sp",
+      "Version": "2.1-3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "grDevices",
+        "graphics",
+        "grid",
+        "lattice",
+        "methods",
+        "stats",
+        "utils"
+      ],
+      "Hash": "1a0cc0cec2915700e63fd0921085cf6a"
     },
     "stringi": {
       "Package": "stringi",
