@@ -18,6 +18,13 @@ library(dplyr)
 library(readr)
 library(arrow)
 library(rgdal)
+library(spdplyr)
+library(geojsonio)
+library(rmapshaper)
+# library(leaflet)
+# library(sf)
+library(plotly)
+library(ggplot2)
 ```
 
 ### Data Reading
@@ -26,31 +33,84 @@ library(rgdal)
 # gdf = read_csv('../data/raw/ne_10m_admin_1_states_provinces/ne_10m_admin_1_states_provinces.shp')
 
 countries <- readOGR(dsn = "../data/raw/ne_10m_admin_1_states_provinces",
-                     layer = "ne_10m_admin_1_states_provinces")
+                     layer = "ne_10m_admin_1_states_provinces", verbose = FALSE)
 
 ```
 
 ### Data filtering
 
 ```{r}
-mexico <- countries[countries$iso_a2 == "MX", ]
-head(mexico)
+# mexico <- countries[countries$iso_a2 == "MX", ]
+mexico <- countries |>  
+  filter(iso_a2 == "MX")
+head(mexico@data)
+```
+
+```{r}
+class(mexico)
+```
+
+```{r}
+mexico_json <- geojson_json(mexico)
+```
+
+```{r}
+class(mexico_json)
+```
+
+```{r}
+geojson_write(mexico_json, file = "../data/processed/mexico.geojson")
+```
+
+### Reading geojson
+
+```{r}
+geojson_file <- geojson_read("../data/processed/mexico.geojson",  what = "sp")
 ```
 
 ### Plotting
 
 ```{r}
-plot(mexico)
+# plot(mexico)
+```
+
+```{r}
+# ggplot() +
+#       geom_polygon(data = mexico, aes(x = longitude,
+#                        y = latitude,
+#                        group = group),
+#                    colour = "black") +
+#       theme_void()
+
+# mexico_map <- ggplot() + 
+#       geom_polygon(data = mexico, aes(x = long, y = lat, group = group), colour = "black", fill = NA)
+```
+
+```{r}
+# shapes <- st_read("../data/raw/ne_10m_admin_1_states_provinces/ne_10m_admin_1_states_provinces.shp")
+# shapes <- merge(shapes, dataset, by.x = 'ISO3', by.y = 'Country.Code')
+```
+
+```{r}
+# leaflet(shapes) |> 
+#   addTiles() |> 
+#   setView(lng = -102, lat = 23, zoom = 5) |>   # Adjust center and zoom level
+#   addPolygons(
+#     data = shapes,
+#     fillColor = "blue",  # Fixed fill color (replace with your desired attribute)
+#     fillOpacity = 0.7,
+#     color = "black",
+#     weight = 1,
+#     opacity = 1,
+#     popup = ~admin
+#   )
 ```
 
 ```{r}
 ggplot() +
-      geom_polygon(data = mexico, aes(x = longitude,
-                       y = latitude,
-                       group = group),
-                   colour = "black") +
-      theme_void()
-
-# mexico_map <- ggplot() + 
-#       geom_polygon(data = mexico, aes(x = long, y = lat, group = group), colour = "black", fill = NA)
+  geom_polygon(data = geojson_file,
+               aes(x = long, y = lat, group = group),
+               fill="darkgreen", color="white") +
+  theme_void() +
+  coord_map()
 ```
