@@ -71,9 +71,10 @@ server <- function(input, output, session) {
   
   # Import states names
   states <- reactive({
-    # Personal
-    # file_path <- "https://raw.githubusercontent.com/Marcony1/2020_mexico_census/master/data/processed/entity_names.csv?token=GHSAT0AAAAAACQDL6ESTHY43EYNRJPGXVPIZRJJDVQ"
+    # Local
     file_path <- here("data", "processed", "entity_names.csv")
+    # Repo
+    # file_path <- "https://raw.githubusercontent.com/Marcony1/2020_mexico_census/master/data/processed/entity_names.csv?token=GHSAT0AAAAAACQDL6ESTHY43EYNRJPGXVPIZRJJDVQ"
     state_data <- read_csv(file_path)
     state_data$NOM_ENT
     
@@ -81,16 +82,18 @@ server <- function(input, output, session) {
   
   # Import census data
   census_dataset <- reactive({
+    # Local
     open_dataset(here("data", "processed", "parquet_data_coords")) |>
       collect()
-    # Personal
+    # Repo
     # census <- read_csv("https://raw.githubusercontent.com/Marcony1/2020_mexico_census/master/data/processed/data_coords.csv?token=GHSAT0AAAAAACQDL6ETT5BCJCTLRLXXYCVYZRJJHDA")
   })
   
   # Import geographic information
   geojson_file <- reactive({
+    # Local
     geojsonio::geojson_read(here("data", "processed", "mexico.geojson"), what = "sp")
-    # Personal
+    # Repo
     # geojsonio::geojson_read("https://raw.githubusercontent.com/Marcony1/2020_mexico_census/master/data/processed/mexico.geojson?token=GHSAT0AAAAAACQDL6ESCDIW2IICELALDOHIZRJJFOA", what = "sp")
   })
   
