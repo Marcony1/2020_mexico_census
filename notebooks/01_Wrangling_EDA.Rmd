@@ -285,6 +285,14 @@ table <- arrow::Table$create(selected_clean)
 output_dir <- here("data", "processed", "parquet_data_coords")
 
 arrow::write_dataset(table, output_dir, partitioning = c("NOM_ENT"), existing_data_behavior = "overwrite")
+
+write_csv(selected_clean,
+          here("data", "processed", "data_coords.csv"))
+```
+
+```{r}
+prueba_csv <- read_csv(here("data", "processed", "data_coords.csv"))
+prueba_csv
 ```
 
 ### Verify unique cities per State
@@ -344,24 +352,7 @@ for(value in entities_csv) {
 }
 ```
 
-```{# {r}
-# for(value in entities_csv) {
-#   
-#   read_dfs <- open_dataset(here("data", "processed", "parquet_data")) |>
-#     filter(NOM_ENT==value) |>
-#     collect()
-#   
-#     read_dfs$LOC_MUN <- paste(read_dfs$LOC, read_dfs$MUN, sep = "_")
-# 
-#   if (nrow(read_dfs) == length(unique(read_dfs$LOC_MUN))) {
-#     print(paste("Localities Unique", value))
-#   } else {
-#         print(paste("NOT OK", value, nrow(read_dfs), "<>", length(unique(read_dfs$LOC_MUN))))
-# 
-#   }
-# 
-# }
-```
+`{# {r} # for(value in entities_csv) { #    #   read_dfs <- open_dataset(here("data", "processed", "parquet_data")) |> #     filter(NOM_ENT==value) |> #     collect() #    #     read_dfs$LOC_MUN <- paste(read_dfs$LOC, read_dfs$MUN, sep = "_") #  #   if (nrow(read_dfs) == length(unique(read_dfs$LOC_MUN))) { #     print(paste("Localities Unique", value)) #   } else { #         print(paste("NOT OK", value, nrow(read_dfs), "<>", length(unique(read_dfs$LOC_MUN)))) #  #   } #  # }`
 
 ```{r}
 for(value in entities_csv) {
