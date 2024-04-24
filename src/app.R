@@ -9,6 +9,8 @@ library(ggplot2)
 library(spdplyr)
 library(tidyr)
 library(shinydashboard)
+library(httr)
+
 
 ### Define UI
 ui <- dashboardPage(
@@ -67,13 +69,11 @@ server <- function(input, output, session) {
   
   # Import states names
   states <- reactive({
-    file_path <- here("data", "processed", "entity_names.csv")
-    if (file.exists(file_path)) {
+    file_path <- "https://raw.github.ubc.ca/MDS-2023-24/DSCI_532_individual-assignment_marcony1/master/data/processed/entity_names.csv?token=GHSAT0AAAAAAAAACLO4KRTK56KAAYK3ZMGQZRJHJBA"
+    # file_path <- here("data", "processed", "entity_names.csv")
       state_data <- read_csv(file_path)
       state_data$NOM_ENT
-    } else {
-      character(0)
-    }
+
   })
   
   # Import census data
@@ -84,8 +84,9 @@ server <- function(input, output, session) {
   
     # Import geographic information
     geojson_file <- reactive({
-      geojsonio::geojson_read(here("data", "processed", "mexico.geojson"), what = "sp")
-    })
+      # geojsonio::geojson_read(here("data", "processed", "mexico.geojson"), what = "sp")
+      geojsonio::geojson_read("https://raw.github.ubc.ca/MDS-2023-24/DSCI_532_individual-assignment_marcony1/master/data/processed/mexico.geojson?token=GHSAT0AAAAAAAAACLO4PRPXDBZULOOUAMO4ZRJHTEA", what = "sp")
+          })
   
   # Filtering census data by current state
   filtered_data <- reactive({

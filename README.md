@@ -5,7 +5,7 @@ The fourth demographic transition has reached many of the most modern and develo
 
 
 ### App description
-
+[![Dashboard Demo](http://img.youtube.com/vi/390M7MEkWjI/0.jpg)](http://www.youtube.com/watch?v=390M7MEkWjI "2020 Mexico Census")
 
 
 ### Installation instructions
