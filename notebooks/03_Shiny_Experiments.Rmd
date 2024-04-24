@@ -72,3 +72,259 @@ ggplot() +
   theme_void() +
   coord_map()
 ```
+
+### Population graph
+
+```{r}
+pueb_norm
+```
+
+### Getting column names
+
+```{r}
+column_names <- names(pueb_norm)
+column_names
+```
+
+### Getting column names that have to do with population age cohorts (Masculine/Feminine)
+
+```{r}
+matching_columns <- grep("^P_.*[MF]$", column_names, value = TRUE)
+matching_columns
+```
+
+### Separate by sex
+
+```{r}
+ending_in_M <- character(0)
+ending_in_F <- character(0)
+
+for (col_name in matching_columns) {
+  if (endsWith(col_name, "M")) {
+    ending_in_M <- c(ending_in_M, col_name)
+  } else if (endsWith(col_name, "F")) {
+    ending_in_F <- c(ending_in_F, col_name)
+  }
+}
+
+print("Column names ending in M:")
+print(ending_in_M)
+
+print("Column names ending in F:")
+print(ending_in_F)
+```
+
+```{r}
+cohort_names_m <- c("P_0A4_M",
+                    "P_5A9_M",
+                    "P_10A14_M",
+                    "P_15A19_M",
+                    "P_20A24_M",
+                    "P_25A29_M",
+                    "P_30A34_M",
+                    "P_35A39_M",
+                    "P_40A44_M",
+                    "P_45A49_M",
+                    "P_50A54_M",
+                    "P_55A59_M",
+                    "P_60A64_M",
+                    "P_65A69_M",
+                    "P_70A74_M",
+                    "P_75A79_M",
+                    "P_80A84_M",
+                    "P_85YMAS_M")
+
+cohort_names_f <- c("P_0A4_F",
+                    "P_5A9_F",
+                    "P_10A14_F",
+                    "P_15A19_F",
+                    "P_20A24_F",
+                    "P_25A29_F",
+                    "P_30A34_F",
+                    "P_35A39_F",
+                    "P_40A44_F",
+                    "P_45A49_F",
+                    "P_50A54_F",
+                    "P_55A59_F",
+                    "P_60A64_F",
+                    "P_65A69_F", 
+                    "P_70A74_F",
+                    "P_75A79_F",
+                    "P_80A84_F", 
+                    "P_85YMAS_F")
+
+
+
+municipality <- "Acajete"
+locality <- "San Javier"
+
+pueb_norm_filt <- pueb_norm |> 
+    filter(NOM_MUN == municipality, NOM_LOC == locality)
+
+cohort_counts_m <- as.numeric(pueb_norm_filt[1,cohort_names_m])
+cohort_counts_f <- as.numeric(pueb_norm_filt[1,cohort_names_f])
+
+data <- tibble(
+  Cohort = c(cohort_names_m, cohort_names_f),
+  Count = c(cohort_counts_m, cohort_counts_f),
+  Sex = rep(c("Male", "Female"), each = length(cohort_names_m))
+)
+
+# Plotting population pyramid
+ggplot(data, aes(x = reorder(Cohort, -Count), y = Count, fill = Sex)) +
+  geom_bar(stat = "identity", position = "identity") +
+  scale_fill_manual(values = c("blue", "pink")) +  
+  coord_flip() +  
+  labs(title = "Population Pyramid",
+       x = "Population Count",
+       y = "Age Cohort",
+       fill = "Sex") +
+  theme_minimal()  
+
+```
+
+```{r}
+new_ages <- c("0-4",
+                 "5-9",
+                 "10-14",
+                 "15-19",
+                 "20-24",
+                 "25-29", 
+                 "30-34", 
+                 "35-39", 
+                 "40-44", 
+                 "45-49",
+                 "50-54",
+                 "55-59",
+                 "60-64", 
+                 "65-69",
+                 "70-74", 
+                 "75-79", 
+                 "80-84", 
+                 "85+")
+
+data <- tibble(
+  Age = paste0(new_ages),
+  Male = sample(200:1000, length(cohort_names_m), replace = TRUE),
+  Female = sample(200:1000, length(cohort_names_f), replace = TRUE)
+)
+
+data_long <- pivot_longer(
+  data, 
+  cols = c(Male, Female), 
+  names_to = "Sex", 
+  values_to = "Population"
+)
+
+basic_plot <- ggplot(data_long, aes(x = Age, y = ifelse(Sex == "Male", -Population, Population), fill = Sex)) +
+  geom_bar(stat = "identity") +
+  scale_y_continuous(labels = abs, limits = max(data_long$Population) * c(-1, 1)) +
+  coord_flip() +
+  theme_minimal() +
+  labs(x = "Age", y = "Population", fill = "Sex", title = "Population Pyramid")
+
+basic_plot
+```
+
+### Complete pipeline
+
+```{r}
+census_dataset <- open_dataset(here("data", "processed", "parquet_data_coords"))
+
+
+pueb_norm <- census_dataset |>
+    filter(NOM_ENT=="Puebla") |> 
+    collect()
+
+municipality <- "Acajete"
+locality <- "San Javier"
+
+pueb_norm_filt <- pueb_norm |> 
+    filter(NOM_MUN == municipality, NOM_LOC == locality)
+
+
+cohort_names_m <- c("P_0A4_M",
+                    "P_5A9_M",
+                    "P_10A14_M",
+                    "P_15A19_M",
+                    "P_20A24_M",
+                    "P_25A29_M",
+                    "P_30A34_M",
+                    "P_35A39_M",
+                    "P_40A44_M",
+                    "P_45A49_M",
+                    "P_50A54_M",
+                    "P_55A59_M",
+                    "P_60A64_M",
+                    "P_65A69_M",
+                    "P_70A74_M",
+                    "P_75A79_M",
+                    "P_80A84_M",
+                    "P_85YMAS_M")
+
+cohort_names_f <- c("P_0A4_F",
+                    "P_5A9_F",
+                    "P_10A14_F",
+                    "P_15A19_F",
+                    "P_20A24_F",
+                    "P_25A29_F",
+                    "P_30A34_F",
+                    "P_35A39_F",
+                    "P_40A44_F",
+                    "P_45A49_F",
+                    "P_50A54_F",
+                    "P_55A59_F",
+                    "P_60A64_F",
+                    "P_65A69_F", 
+                    "P_70A74_F",
+                    "P_75A79_F",
+                    "P_80A84_F", 
+                    "P_85YMAS_F")
+
+
+
+new_ages <- c("0-4",
+                 "5-9",
+                 "10-14",
+                 "15-19",
+                 "20-24",
+                 "25-29", 
+                 "30-34", 
+                 "35-39", 
+                 "40-44", 
+                 "45-49",
+                 "50-54",
+                 "55-59",
+                 "60-64", 
+                 "65-69",
+                 "70-74", 
+                 "75-79", 
+                 "80-84", 
+                 "85+")
+
+
+data <- tibble(
+  Age = paste0(new_ages),
+  Male = as.numeric(pueb_norm_filt[1,cohort_names_m]),
+  Female = as.numeric(pueb_norm_filt[1,cohort_names_f])
+)
+
+data_long <- pivot_longer(
+  data, 
+  cols = c(Male, Female), 
+  names_to = "Sex", 
+  values_to = "Population"
+)
+basic_plot <- ggplot(data_long, aes(x = Age, y = ifelse(Sex == "Male", -Population, Population), fill = Sex)) +
+  geom_bar(stat = "identity") +
+  scale_y_continuous(labels = abs, limits = max(data_long$Population) * c(-1, 1)) +
+  coord_flip() +
+  theme_minimal() +
+  labs(x = "Age", y = "Population", fill = "Sex", title = "Population Pyramid")
+
+basic_plot
+```
+
+\
+
+\

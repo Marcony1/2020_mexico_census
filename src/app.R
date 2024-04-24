@@ -10,6 +10,7 @@ library(shinyjs)
 library(geojsonio)
 library(ggplot2)
 library(spdplyr)
+library(tidyr)
 
 
 ### Layout
@@ -47,6 +48,9 @@ ui <- fluidPage(
   
   # Plot area
   plotOutput("map_plot"),
+  
+  # Population Pyramid
+  plotOutput("population_pyramid"),
   
   br()
 
@@ -110,16 +114,16 @@ server <- function(input, output, session) {
   # Update localities dropdown based on selected state and municipality
   observeEvent(c(input$state_dropdown, input$municipality_dropdown), {
     req(input$state_dropdown, input$municipality_dropdown)
-    # Disable dropdowns
-    shinyjs::disable("state_dropdown")
-    shinyjs::disable("municipality_dropdown")
-    shinyjs::disable("locality_dropdown")
+        # Disable dropdowns
+        shinyjs::disable("state_dropdown")
+        shinyjs::disable("municipality_dropdown")
+        shinyjs::disable("locality_dropdown")
     filter_df <- filter(census_dataset(), NOM_ENT == input$state_dropdown, NOM_MUN == input$municipality_dropdown)
     updateSelectInput(session, "locality_dropdown", choices = unique(filter_df$NOM_LOC))
-    # Enable dropdowns
-    shinyjs::enable("state_dropdown")
-    shinyjs::enable("municipality_dropdown")
-    shinyjs::enable("locality_dropdown")
+        # Enable dropdowns
+        shinyjs::enable("state_dropdown")
+        shinyjs::enable("municipality_dropdown")
+        shinyjs::enable("locality_dropdown")
   })
   
   # Plot map
@@ -162,6 +166,66 @@ server <- function(input, output, session) {
     
     print(gg)
   })
+  
+  # Plot pyramid
+  output$population_pyramid <- renderPlot({
+    req(input$state_dropdown)
+    
+    filter_df <- filter(
+      census_dataset(),
+      NOM_ENT == input$state_dropdown,
+      NOM_MUN == input$municipality_dropdown,
+      NOM_LOC == input$locality_dropdown
+    )
+    
+    # Cohorts for pyramid plot
+    cohort_names_m <- c(
+      "P_0A4_M", "P_5A9_M", "P_10A14_M", "P_15A19_M", "P_20A24_M",
+      "P_25A29_M", "P_30A34_M", "P_35A39_M", "P_40A44_M", "P_45A49_M",
+      "P_50A54_M", "P_55A59_M", "P_60A64_M", "P_65A69_M", "P_70A74_M",
+      "P_75A79_M", "P_80A84_M", "P_85YMAS_M"
+    )
+    
+    cohort_names_f <- c(
+      "P_0A4_F", "P_5A9_F", "P_10A14_F", "P_15A19_F", "P_20A24_F",
+      "P_25A29_F", "P_30A34_F", "P_35A39_F", "P_40A44_F", "P_45A49_F",
+      "P_50A54_F", "P_55A59_F", "P_60A64_F", "P_65A69_F", "P_70A74_F",
+      "P_75A79_F", "P_80A84_F", "P_85YMAS_F"
+    )
+    
+    # New common cohort name
+    new_ages <- c("00-04", "05-09", "10-14", "15-19", "20-24", "25-29", "30-34", 
+                  "35-39", "40-44", "45-49", "50-54", "55-59", "60-64", 
+                  "65-69", "70-74", "75-79", "80-84", "85+")
+    
+    # Convert info into a tibble
+    population_data <- tibble(
+      Age = paste0(new_ages),
+      Male = as.numeric(filter_df[1, cohort_names_m]),
+      Female = as.numeric(filter_df[1, cohort_names_f])
+    )
+    
+    # Pivot Longer
+    population_long <- pivot_longer(
+      population_data,
+      cols = c(Male, Female),
+      names_to = "Sex",
+      values_to = "Population"
+    )
+    
+    gg <- ggplot(population_long, aes(x = Age, y = ifelse(Sex == "Male", -Population, Population), fill = Sex)) +
+          geom_bar(stat = "identity") +
+          scale_y_continuous(labels = abs, limits = c(-1, 1) * max(population_long$Population)) +
+          coord_flip() +
+          theme_minimal() +
+          labs(x = "Age", y = "Population", fill = "Sex", title = "Population Pyramid")
+    
+    print(gg)
+  
+    
+  })
+  
+  
 }
 
 # Run the app/dashboard
