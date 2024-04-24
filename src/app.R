@@ -8,6 +8,8 @@ library(dplyr)
 library(arrow)
 library(shinyjs)
 library(geojsonio)
+library(ggplot2)
+library(spdplyr)
 
 
 ### Layout
@@ -62,9 +64,9 @@ server <- function(input, output, session) {
     file_path <- here("data", "processed", "entity_names.csv")
     if (file.exists(file_path)) {
       state_data <- read_csv(file_path)
-      state_data$NOM_ENT  
+      state_data$NOM_ENT
     } else {
-      character(0) 
+      character(0)
     }
   })
   
@@ -79,14 +81,12 @@ server <- function(input, output, session) {
     geojsonio::geojson_read(here("data", "processed", "mexico.geojson"), what = "sp")
   })
   
-  
-  # Filtering cencus data by current state
+  # Filtering census data by current state
   filtered_data <- reactive({
     req(input$state_dropdown)
     filter_df <- filter(census_dataset(), NOM_ENT == input$state_dropdown)
     return(filter_df)
   })
-  
   
   # Load states to state dropdown
   observe({
@@ -95,93 +95,74 @@ server <- function(input, output, session) {
   
   # Load Municipalities to municipalities dropdown
   observe({
-    # Disable dropdowns
-    shinyjs::disable("state_dropdown")
-    shinyjs::disable("municipality_dropdown")
-    shinyjs::disable("locality_dropdown")
-    
-    # Waiting animation
-    # showSpinner(spin = "foldingCube", color = "#337ab7")
-    
+    req(input$state_dropdown)
+        # Disable dropdowns
+        shinyjs::disable("state_dropdown")
+        shinyjs::disable("municipality_dropdown")
+        shinyjs::disable("locality_dropdown")
     updateSelectInput(session, "municipality_dropdown", choices = unique(filtered_data()$NOM_MUN))
-    
-    # Enable dropdowns
-    shinyjs::enable("state_dropdown")
-    shinyjs::enable("municipality_dropdown")
-    shinyjs::enable("locality_dropdown")
-    
-    # Hide Waiting animation
-    # hideSpinner()
-    
+        # Enable dropdowns
+        shinyjs::enable("state_dropdown")
+        shinyjs::enable("municipality_dropdown")
+        shinyjs::enable("locality_dropdown")
   })
   
   # Update localities dropdown based on selected state and municipality
   observeEvent(c(input$state_dropdown, input$municipality_dropdown), {
+    req(input$state_dropdown, input$municipality_dropdown)
     # Disable dropdowns
     shinyjs::disable("state_dropdown")
     shinyjs::disable("municipality_dropdown")
     shinyjs::disable("locality_dropdown")
-    
-    # Filter dataset based on selected municipality
-    filter_df <- filter(census_dataset(), NOM_ENT == input$state_dropdown,
-                                          NOM_MUN == input$municipality_dropdown)
-    
-    # Update locality dropdown choices
-    locality_choices <- unique(filter_df$NOM_LOC)
-    updateSelectInput(session, "locality_dropdown", choices = locality_choices)
-    
+    filter_df <- filter(census_dataset(), NOM_ENT == input$state_dropdown, NOM_MUN == input$municipality_dropdown)
+    updateSelectInput(session, "locality_dropdown", choices = unique(filter_df$NOM_LOC))
     # Enable dropdowns
     shinyjs::enable("state_dropdown")
     shinyjs::enable("municipality_dropdown")
     shinyjs::enable("locality_dropdown")
   })
   
-  
   # Plot map
   output$map_plot <- renderPlot({
+    req(input$state_dropdown)
     
-    if (input$state_dropdown == "Total nacional"){
+    # Initial plot setup
+    gg <- ggplot() +
+      theme_void() +
+      coord_map()
+    
+    if (input$state_dropdown == "Total nacional") {
       filtered_df <- geojson_file()
     } else {
       filtered_df <- geojson_file() |> 
         filter(name == input$state_dropdown)
     }
     
+    gg <- gg + geom_polygon(data = filtered_df,
+                            aes(x = long, y = lat, group = group),
+                            fill = "lightgray", color = "white")
     
-    # Plot setup
-    gg <- ggplot() +
-      geom_polygon(data = filtered_df,
-                   aes(x = long,
-                       y = lat,
-                       group = group),
-                   fill = "lightgray",
-                   color = "white") +
-      theme_void() +
-      coord_map()
-    
-    coord_df <- filter(census_dataset(), 
-                       NOM_ENT == input$state_dropdown,
-                       NOM_MUN == input$municipality_dropdown,
-                       NOM_LOC == input$locality_dropdown)
-    
-  
-    if (!is.null(coord_df) && nrow(coord_df) > 0 && !is.na(coord_df$longitude_decimal) && !is.na(coord_df$latitude_decimal)) {
-      coordinates <- tibble(
-        long = coord_df$longitude_decimal[[1]],
-        lat = coord_df$latitude_decimal[[1]]
-      ) 
-      print(coordinates)
-      gg <- gg + geom_point(data = coordinates, aes(x = long, y = lat), color = "red", size = 3)
+    # Check if locality dropdown is selected
+    if (!is.null(input$locality_dropdown) && input$locality_dropdown != "") {
+      coord_df <- filter(census_dataset(), 
+                         NOM_ENT == input$state_dropdown,
+                         NOM_MUN == input$municipality_dropdown,
+                         NOM_LOC == input$locality_dropdown)
+      
+      # Filter out invalid coordinates and extract the first row
+      if (nrow(coord_df) > 0 && !any(is.na(coord_df$longitude_decimal)) && !any(is.na(coord_df$latitude_decimal))) {
+        coordinates <- tibble(
+          long = coord_df$longitude_decimal[1],
+          lat = coord_df$latitude_decimal[1]
+        )
+        
+        gg <- gg + geom_point(data = coordinates, aes(x = long, y = lat), color = "red", size = 3)
+      }
     }
     
-    print(gg)  
+    print(gg)
   })
-  
-  
-  
-  
 }
 
-
-### Run the app/dashboard
+# Run the app/dashboard
 shinyApp(ui, server)

@@ -56,7 +56,7 @@ extract_coordinates <- function(data, municipality, locality) {
 municipality <- "Acajete"
 locality <- "Santa Isabel Tepetzala"
 
-red_point <- extract_coordinates(pueb_norm, municipality, locality) %>%
+red_point <- extract_coordinates(pueb_norm, municipality, locality) |> 
   slice(1)
 
 # red_point <- data.frame(long = -98.2035, lat = 19.0414)
