@@ -14,6 +14,7 @@ library(here)
 library(dplyr)
 library(arrow)
 library(tidyr)
+library(geojsonio)
 ```
 
 ### Reading data
@@ -61,6 +62,7 @@ red_point <- extract_coordinates(pueb_norm, municipality, locality) |>
   slice(1)
 
 # red_point <- data.frame(long = -98.2035, lat = 19.0414)
+geojson_file <- geojson_read("../data/processed/mexico.geojson",  what = "sp")
 
 filtered_geojson <- geojson_file |> 
   filter(name == "Puebla")
@@ -392,4 +394,45 @@ tot
     
     gg
     
+```
+
+### Read CSV from URL
+
+```{r}
+test_csv <- read.csv("https://raw.github.ubc.ca/MDS-2023-24/DSCI_532_individual-assignment_marcony1/master/data/processed/data_coords.csv?token=GHSAT0AAAAAAAAACLO5WK36WJ6S74E3NU4CZRJJJGA")
+
+test_csv
+
+```
+
+```{r}
+filtered_data <- filter(test_csv, NOM_ENT == "Puebla")
+filtered_data
+```
+
+### Download with curl
+
+```{r}
+library(curl)
+
+url <- "https://raw.github.ubc.ca/MDS-2023-24/DSCI_532_individual-assignment_marcony1/master/data/processed/data_coords.csv?token=GHSAT0AAAAAAAAACLO5WK36WJ6S74E3NU4CZRJJJGA"
+
+response <- curl::curl_fetch_memory(url)
+
+if (response$status_code == 200) {
+  csv_content <- rawToChar(response$content)
+    test_csv <- read.csv(text = csv_content)
+print(test_csv)
+}
+```
+
+```{r}
+library(RCurl)
+x <- getURL("https://raw.github.ubc.ca/MDS-2023-24/DSCI_532_individual-assignment_marcony1/master/data/processed/data_coords.csv?token=GHSAT0AAAAAAAAACLO5WK36WJ6S74E3NU4CZRJJJGA")
+y <- read.csv(text = x)
+y
+```
+
+```{r}
+# test_2 <- arrow::read_parquet("https://github.ubc.ca/MDS-2023-24/DSCI_532_individual-assignment_marcony1/tree/master/data/processed/parquet_data_coords.parquet")
 ```

@@ -282,7 +282,7 @@ selected_clean
 ```{r}
 table <- arrow::Table$create(selected_clean)
 
-output_dir <- here("data", "processed", "parquet_data_coords")
+output_dir <- here("data", "processed", "parquet_data_coords.parquet")
 
 arrow::write_dataset(table, output_dir, partitioning = c("NOM_ENT"), existing_data_behavior = "overwrite")
 
