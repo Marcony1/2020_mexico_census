@@ -1,0 +1,47 @@
+---
+title: "R Notebook"
+output: html_notebook
+author: Marco Polo Bravo Montiel
+date: 2020-04-23
+---
+
+# Shiny App Experiment Lab
+
+### Libraries
+
+```{r}
+library(here)
+library(dplyr)
+library(arrow)
+```
+
+### Reading data
+
+```{r}
+census_data <- open_dataset(here("data", "processed", "parquet_data_coords"))$data
+census_data
+```
+
+```{r}
+census_data
+```
+
+```{r}
+census_dataset <- open_dataset(here("data", "processed", "parquet_data_coords"))
+census_dataset
+
+```
+
+### Reading specific data
+
+```{r}
+pueb_norm <- census_dataset |>
+    filter(NOM_ENT=="Puebla") |> 
+    collect()
+
+pueb_norm
+```
+
+```{r}
+unique(pueb_norm$NOM_MUN)
+```

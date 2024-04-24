@@ -363,6 +363,25 @@ for(value in entities_csv) {
 }
 ```
 
+```{r}
+for(value in entities_csv) {
+  
+  read_dfs <- open_dataset(here("data", "processed", "parquet_data")) |>
+    filter(NOM_ENT==value) |>
+    collect()
+  
+    read_dfs$LOC_MUN <- paste(read_dfs$LOC, read_dfs$NOM_MUN, sep = "_")
+
+  if (nrow(read_dfs) == length(unique(read_dfs$LOC_MUN))) {
+    print(paste("Localities Unique", value))
+  } else {
+        print(paste("NOT OK", value, nrow(read_dfs), "<>", length(unique(read_dfs$LOC_MUN))))
+
+  }
+
+}
+```
+
 ### Conclusion
 
 #### Append code to MUN and LOC
