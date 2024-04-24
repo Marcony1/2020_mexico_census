@@ -83,7 +83,9 @@ clean_info_dict
 replacement_dict <- c(
   "Coahuila de Zaragoza" = "Coahuila",
   "Michoacán de Ocampo" = "Michoacán",
-  "Veracruz de Ignacio de la Llave" = "Veracruz"
+  "Veracruz de Ignacio de la Llave" = "Veracruz",
+  "México" = "Estado de México"
+
 )
 
 df_new_names <- df |> 
