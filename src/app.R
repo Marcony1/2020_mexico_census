@@ -1,6 +1,5 @@
 options(shiny.port = 8050, shiny.autoreload = TRUE)
 
-
 library(shiny)
 library(here)
 library(readr)
@@ -205,20 +204,26 @@ server <- function(input, output, session) {
       Female = as.numeric(filter_df[1, cohort_names_f])
     )
     
-    # Pivot Longer
-    population_long <- pivot_longer(
-      population_data,
-      cols = c(Male, Female),
-      names_to = "Sex",
-      values_to = "Population"
-    )
-    
-    gg <- ggplot(population_long, aes(x = Age, y = ifelse(Sex == "Male", -Population, Population), fill = Sex)) +
-          geom_bar(stat = "identity") +
-          scale_y_continuous(labels = abs, limits = c(-1, 1) * max(population_long$Population)) +
-          coord_flip() +
-          theme_minimal() +
-          labs(x = "Age", y = "Population", fill = "Sex", title = "Population Pyramid")
+    if (any(is.na(population_data$Male)) || any(is.na(population_data$Female))) {
+      message <- "Not Available"
+      gg <- ggplot() + geom_text(aes(x = 0, y = 0, label = message), size = 10)
+    } else {
+      
+      # Pivot Longer
+      population_long <- pivot_longer(
+        population_data,
+        cols = c(Male, Female),
+        names_to = "Sex",
+        values_to = "Population"
+      )
+      
+      gg <- ggplot(population_long, aes(x = Age, y = ifelse(Sex == "Male", -Population, Population), fill = Sex)) +
+        geom_bar(stat = "identity") +
+        scale_y_continuous(labels = abs, limits = c(-1, 1) * max(population_long$Population)) +
+        coord_flip() +
+        theme_minimal() +
+        labs(x = "Age", y = "Population", fill = "Sex", title = "Population Pyramid")
+    }
     
     print(gg)
   
