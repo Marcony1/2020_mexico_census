@@ -78,8 +78,10 @@ server <- function(input, output, session) {
   
   # Import census data
   census_dataset <- reactive({
-    open_dataset(here("data", "processed", "parquet_data_coords")) |> 
+    open_dataset(here("data", "processed", "parquet_data_coords")) |>
       collect()
+    # url <- "https://github.ubc.ca/MDS-2023-24/DSCI_532_individual-assignment_marcony1/raw/master/data/processed/parquet_data_coords"
+    # open_dataset(url) |> collect()
   })
   
     # Import geographic information
