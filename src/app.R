@@ -78,7 +78,7 @@ server <- function(input, output, session) {
   
   # Import census data
   census_dataset <- reactive({
-    open_dataset(here("data", "processed", "parquet_data_coords")) %>%
+    open_dataset(here("data", "processed", "parquet_data_coords")) |> 
       collect()
   })
   
