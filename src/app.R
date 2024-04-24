@@ -1,5 +1,3 @@
-options(shiny.port = 8050, shiny.autoreload = TRUE)
-
 library(shiny)
 library(here)
 library(readr)
@@ -10,56 +8,66 @@ library(geojsonio)
 library(ggplot2)
 library(spdplyr)
 library(tidyr)
+library(shinydashboard)
 
-
-### Layout
-ui <- fluidPage(
-  theme = bslib::bs_theme(bootswatch = 'litera'),
-  h1("2020 Mexico Census"),
-
-
-  useShinyjs(), # Disable dropdowns until updated
-  
-
-  # State dropdown
-  selectInput(
-    "state_dropdown",
-    "Select a state",
-    choices = c(),
-    selected = NULL,
+### Define UI
+ui <- dashboardPage(
+  dashboardHeader(title = "2020 Mexico Census"),
+  dashboardSidebar(
+    useShinyjs(),
+    selectInput("state_dropdown", "Select a state", choices = c(), selected = NULL),
+    selectInput("municipality_dropdown", "Select a municipality", choices = c(), selected = NULL),
+    selectInput("locality_dropdown", "Select a locality", choices = c(), selected = NULL)
   ),
-  
-  # Municipality dropdown
-  selectInput(
-    "municipality_dropdown",
-    "Select a municipality",
-    choices = c(),  
-    selected = NULL
-  ),
-  
-  # Locality dropdown
-  selectInput(
-    "locality_dropdown",
-    "Select a locality",
-    choices = c(),
-    selected = NULL
-  ),
-  
-  # Plot area
-  plotOutput("map_plot"),
-  
-  # Population Pyramid
-  plotOutput("population_pyramid"),
-  
-  br()
-
+  dashboardBody(
+    fluidRow(
+      box(
+        title = "Map",
+        status = "primary",
+        plotOutput("map_plot")
+      ),
+      box(
+        title = "Population Pyramid",
+        status = "primary",
+        plotOutput("population_pyramid")
+      )
+    ),
+    fluidRow(
+      box(
+        title = "Total Male Population",
+        status = "primary",
+        textOutput("total_male_population")
+      ),
+      box(
+        title = "Total Population",
+        status = "primary",
+        textOutput("population_card")
+      )
+    ),
+    fluidRow(
+      box(
+        title = "Birth in entity vs. birth in another entity",
+        status = "primary",
+        textOutput("birth_origin")
+      ),
+      box(
+        title = "Men to Women Ratio",
+        status = "primary",
+        plotOutput("men_women_ratio_pie")
+      )
+    )
+    # fluidRow(
+    #   box(
+    #     title = "Men to Women Ratio",
+    #     status = "primary",
+    #     plotOutput("men_women_ratio_pie")
+    #   ),
+    # )
+  )
 )
 
 
-
-
-
-### Callbacks
+### Define server logic
 server <- function(input, output, session) {
   
   # Import states names
@@ -75,14 +83,14 @@ server <- function(input, output, session) {
   
   # Import census data
   census_dataset <- reactive({
-    open_dataset(here("data", "processed", "parquet_data_coords")) |> 
+    open_dataset(here("data", "processed", "parquet_data_coords")) %>%
       collect()
   })
   
-  # Import geographic information
-  geojson_file <- reactive({
-    geojsonio::geojson_read(here("data", "processed", "mexico.geojson"), what = "sp")
-  })
+    # Import geographic information
+    geojson_file <- reactive({
+      geojsonio::geojson_read(here("data", "processed", "mexico.geojson"), what = "sp")
+    })
   
   # Filtering census data by current state
   filtered_data <- reactive({
@@ -93,80 +101,82 @@ server <- function(input, output, session) {
   
   # Load states to state dropdown
   observe({
+    shinyjs::disable("state_dropdown")
+    shinyjs::disable("municipality_dropdown")
+    shinyjs::disable("locality_dropdown")
     updateSelectInput(session, "state_dropdown", choices = states())
+    shinyjs::enable("state_dropdown")
+    shinyjs::enable("municipality_dropdown")
+    shinyjs::enable("locality_dropdown")
   })
   
   # Load Municipalities to municipalities dropdown
   observe({
     req(input$state_dropdown)
-        # Disable dropdowns
-        shinyjs::disable("state_dropdown")
-        shinyjs::disable("municipality_dropdown")
-        shinyjs::disable("locality_dropdown")
+    shinyjs::disable("state_dropdown")
+    shinyjs::disable("municipality_dropdown")
+    shinyjs::disable("locality_dropdown")
     updateSelectInput(session, "municipality_dropdown", choices = unique(filtered_data()$NOM_MUN))
-        # Enable dropdowns
-        shinyjs::enable("state_dropdown")
-        shinyjs::enable("municipality_dropdown")
-        shinyjs::enable("locality_dropdown")
+    shinyjs::enable("state_dropdown")
+    shinyjs::enable("municipality_dropdown")
+    shinyjs::enable("locality_dropdown")
   })
   
   # Update localities dropdown based on selected state and municipality
   observeEvent(c(input$state_dropdown, input$municipality_dropdown), {
     req(input$state_dropdown, input$municipality_dropdown)
-        # Disable dropdowns
-        shinyjs::disable("state_dropdown")
-        shinyjs::disable("municipality_dropdown")
-        shinyjs::disable("locality_dropdown")
+    shinyjs::disable("state_dropdown")
+    shinyjs::disable("municipality_dropdown")
+    shinyjs::disable("locality_dropdown")
     filter_df <- filter(census_dataset(), NOM_ENT == input$state_dropdown, NOM_MUN == input$municipality_dropdown)
     updateSelectInput(session, "locality_dropdown", choices = unique(filter_df$NOM_LOC))
-        # Enable dropdowns
-        shinyjs::enable("state_dropdown")
-        shinyjs::enable("municipality_dropdown")
-        shinyjs::enable("locality_dropdown")
+    shinyjs::enable("state_dropdown")
+    shinyjs::enable("municipality_dropdown")
+    shinyjs::enable("locality_dropdown")
   })
   
   # Plot map
-  output$map_plot <- renderPlot({
-    req(input$state_dropdown)
-    
-    # Initial plot setup
-    gg <- ggplot() +
-      theme_void() +
-      coord_map()
-    
-    if (input$state_dropdown == "Total nacional") {
-      filtered_df <- geojson_file()
-    } else {
-      filtered_df <- geojson_file() |> 
-        filter(name == input$state_dropdown)
-    }
-    
-    gg <- gg + geom_polygon(data = filtered_df,
-                            aes(x = long, y = lat, group = group),
-                            fill = "lightgray", color = "white")
-    
-    # Check if locality dropdown is selected
-    if (!is.null(input$locality_dropdown) && input$locality_dropdown != "") {
-      coord_df <- filter(census_dataset(), 
-                         NOM_ENT == input$state_dropdown,
-                         NOM_MUN == input$municipality_dropdown,
-                         NOM_LOC == input$locality_dropdown)
-      
-      # Filter out invalid coordinates and extract the first row
-      if (nrow(coord_df) > 0 && !any(is.na(coord_df$longitude_decimal)) && !any(is.na(coord_df$latitude_decimal))) {
-        coordinates <- tibble(
-          long = coord_df$longitude_decimal[1],
-          lat = coord_df$latitude_decimal[1]
-        )
-        
-        gg <- gg + geom_point(data = coordinates, aes(x = long, y = lat), color = "red", size = 3)
+    output$map_plot <- renderPlot({
+      req(input$state_dropdown)
+
+      # Initial plot setup
+      gg <- ggplot() +
+        theme_void() +
+        coord_map()
+
+      if (input$state_dropdown == "Total nacional") {
+        filtered_df <- geojson_file()
+      } else {
+        filtered_df <- geojson_file() |>
+          filter(name == input$state_dropdown)
       }
-    }
-    
-    print(gg)
-  })
+
+      gg <- gg + geom_polygon(data = filtered_df,
+                              aes(x = long, y = lat, group = group),
+                              fill = "lightgray", color = "white")
+
+      # Check if locality dropdown is selected
+      if (!is.null(input$locality_dropdown) && input$locality_dropdown != "") {
+        coord_df <- filter(census_dataset(),
+                           NOM_ENT == input$state_dropdown,
+                           NOM_MUN == input$municipality_dropdown,
+                           NOM_LOC == input$locality_dropdown)
+
+        # Filter out invalid coordinates and extract the first row
+        if (nrow(coord_df) > 0 && !any(is.na(coord_df$longitude_decimal)) && !any(is.na(coord_df$latitude_decimal))) {
+          coordinates <- tibble(
+            long = coord_df$longitude_decimal[1],
+            lat = coord_df$latitude_decimal[1]
+          )
+
+          gg <- gg + geom_point(data = coordinates, aes(x = long, y = lat), color = "red", size = 3)
+        }
+      }
+
+      print(gg)
+    })
   
-  # Plot pyramid
+  # Render population pyramid
   output$population_pyramid <- renderPlot({
     req(input$state_dropdown)
     
@@ -208,7 +218,6 @@ server <- function(input, output, session) {
       message <- "Not Available"
       gg <- ggplot() + geom_text(aes(x = 0, y = 0, label = message), size = 10)
     } else {
-      
       # Pivot Longer
       population_long <- pivot_longer(
         population_data,
@@ -222,16 +231,125 @@ server <- function(input, output, session) {
         scale_y_continuous(labels = abs, limits = c(-1, 1) * max(population_long$Population)) +
         coord_flip() +
         theme_minimal() +
-        labs(x = "Age", y = "Population", fill = "Sex", title = "Population Pyramid")
+        labs(x = "Age", y = "Population", fill = "Sex")
     }
     
     print(gg)
-  
-    
   })
   
+  # Render population card
+  output$population_card <- renderText({
+    req(input$state_dropdown, input$municipality_dropdown, input$locality_dropdown)
+    filter_df <- filter(
+      census_dataset(),
+      NOM_ENT == input$state_dropdown,
+      NOM_MUN == input$municipality_dropdown,
+      NOM_LOC == input$locality_dropdown
+    )
+    
+    total_population <- as.numeric(filter_df[1, "POBTOT"], na.rm = TRUE)
+    
+    if (is.na(total_population)) {
+      "Not Available"
+    } else {
+      return(total_population)
+    }
+  })
   
+  # Render men to women ratio pie chart
+  output$men_women_ratio_pie <- renderPlot({
+    req(input$state_dropdown, input$municipality_dropdown, input$locality_dropdown)
+    filter_df <- filter(
+      census_dataset(),
+      NOM_ENT == input$state_dropdown,
+      NOM_MUN == input$municipality_dropdown,
+      NOM_LOC == input$locality_dropdown
+    )
+    
+    men_to_women_ratio <- as.numeric(filter_df[1, "REL_H_M"])
+    women_to_men_ratio <- 10000 / men_to_women_ratio
+    
+    ratio_df <- tibble(
+      Category = c("Men", "Women"),
+      Ratio = c(men_to_women_ratio, women_to_men_ratio)
+    )
+    
+    # Calculate percentages
+    ratio_df$Percentage <- ratio_df$Ratio / sum(ratio_df$Ratio) * 100
+    
+    
+    if (any(is.na(men_to_women_ratio)) || any(is.na(women_to_men_ratio))) {
+      message <- "Not Available"
+      gg <- ggplot() + geom_text(aes(x = 0, y = 0, label = message), size = 10)
+    } else {
+    # Plot the pie chart
+      gg <- ggplot(ratio_df, aes(x = "", y = Ratio, fill = Category)) +
+        geom_bar(stat = "identity", width = 1) +
+        coord_polar(theta = "y") +
+        theme_void() +
+        theme(legend.position = "bottom") +
+        scale_fill_manual(values = c("#00BFC4", "#F8766D")) +
+        geom_text(aes(label = paste0(round(Percentage), "%")), 
+                  position = position_stack(vjust = 0.5),
+                  size = 5, color = "white", fontface = "bold")
+    
+    }
+    
+    print(gg)
+  })
+  
+  # Render birth origin pie chart
+  output$birth_origin <- renderPlot({
+    req(input$state_dropdown, input$municipality_dropdown, input$locality_dropdown)
+    
+    # Filter census data based on selected inputs
+    filter_df <- filter(
+      census_dataset(),
+      NOM_ENT == input$state_dropdown,
+      NOM_MUN == input$municipality_dropdown,
+      NOM_LOC == input$locality_dropdown
+    )
+    
+    # Extract birth data (as numeric)
+    birth_local <- as.numeric(filter_df[1, "PNACENT"])
+    birth_another <- as.numeric(filter_df[1, "PNACOE"])
+    
+    # Debugging output
+    print(paste("Birth Local:", birth_local))
+    print(paste("Birth Another:", birth_another))
+    
+    # Check if birth data is available (not NA)
+    if (is.na(birth_local) || is.na(birth_another)) {
+      message <- "Data Not Available"
+      gg <- ggplot() +
+        geom_text(aes(x = 0, y = 0, label = message), size = 10)
+    } else {
+      # Create ratio dataframe
+      ratio_df <- tibble(
+        Category = c("Local", "Other"),
+        Ratio = c(birth_local, birth_another)
+      )
+      
+      # Calculate percentages
+      ratio_df$Percentage <- ratio_df$Ratio / sum(ratio_df$Ratio) * 100
+      
+      # Plot the pie chart
+      gg <- ggplot(ratio_df, aes(x = "", y = Ratio, fill = Category)) +
+        geom_bar(stat = "identity", width = 1) +
+        coord_polar(theta = "y") +
+        theme_void() +
+        theme(legend.position = "bottom") +
+        scale_fill_manual(values = c("#00BFC4", "#F8766D")) +
+        geom_text(aes(label = paste0(round(Percentage), "%")), 
+                  position = position_stack(vjust = 0.5),
+                  size = 5, color = "white", fontface = "bold")
+    }
+    
+    # Print the plot
+    print(gg)
+  })
 }
 
-# Run the app/dashboard
+# Run the application
 shinyApp(ui, server)
+

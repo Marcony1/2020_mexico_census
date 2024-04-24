@@ -325,6 +325,70 @@ basic_plot <- ggplot(data_long, aes(x = Age, y = ifelse(Sex == "Male", -Populati
 basic_plot
 ```
 
-\
+### Card
 
-\
+```{r}
+# card <- census_dataset |>  
+#     filter(
+#       NOM_ENT == "Puebla",
+#       NOM_MUN == "Acateno",
+#       NOM_LOC == "Santa Andrea"
+#     ) |> 
+#   collect()
+    
+    total_population <- as.numeric(card[1, c("POBTOT")], na.rm = TRUE)
+    paste("Total Population:", total_population)
+```
+
+### Pie
+
+```{r}
+tot <- census_dataset |>
+    filter(NOM_ENT=="Total nacional") |> 
+    collect()
+
+tot
+```
+
+```{r}
+# origin <- census_dataset |>  
+#      filter(
+#       NOM_ENT == "Puebla",
+#       NOM_MUN == "Acateno",
+#       NOM_LOC == "Santa Andrea"
+#     ) |>
+#   collect()
+    
+tot
+    
+    # Extract birth data
+    birth_local <- as.numeric(tot[1, "PNACENT"])
+    birth_another <- as.numeric(tot[1, "PNACOE"])
+    
+    # Debugging output
+    print(paste("Birth Local:", birth_local))
+    print(paste("Birth Another:", birth_another))
+    
+    # Create ratio dataframe
+    ratio_df <- tibble(
+      Category = c("Local", "Other"),
+      Ratio = c(birth_local, birth_another)
+    )
+    
+    # Calculate percentages
+    ratio_df$Percentage <- ratio_df$Ratio / sum(ratio_df$Ratio) * 100
+    
+    # Plot the pie chart
+    gg <- ggplot(ratio_df, aes(x = "", y = Ratio, fill = Category)) +
+      geom_bar(stat = "identity", width = 1) +
+      coord_polar(theta = "y") +
+      theme_void() +
+      theme(legend.position = "bottom") +
+      scale_fill_manual(values = c("#00BFC4", "#F8766D")) +
+      geom_text(aes(label = paste0(round(Percentage), "%")), 
+                position = position_stack(vjust = 0.5),
+                size = 5, color = "white", fontface = "bold")
+    
+    gg
+    
+```
