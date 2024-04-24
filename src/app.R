@@ -15,25 +15,12 @@ ui <- fluidPage(
 
   selectInput(
     "state_dropdown",
-    "Select a city",
+    "Select a state",
     choices = c("New York", "Montreal", "San Fransico"),
     selected = "Montreal",
   ),
-  br(),
+  br()
 
-  selectizeInput(
-    "city_multi",
-    "",
-    choices = c("New York", "Montreal", "San Fransico"),
-    multi=TRUE,
-    options = list(
-      placeholder = 'Select multiple cities',
-      onInitialize = I('function() { this.setValue(""); }')
-    )
-  )
-  
-  
-  
 )
 
 # Callbacks
@@ -53,7 +40,6 @@ server <- function(input, output, session) {
   # Load states to state dropdown
   observe({
     updateSelectInput(session, "state_dropdown", choices = states())
-    updateSelectizeInput(session, "city_multi", choices = states())
   })
   
 }

@@ -143,7 +143,7 @@ table <- arrow::Table$create(selected_df)
 
 output_dir <- here("data", "processed", "parquet_data")
 
-arrow::write_dataset(table, output_dir, partitioning = c("NOM_ENT", "ENTIDAD"), existing_data_behavior = "overwrite")
+arrow::write_dataset(table, output_dir, partitioning = c("NOM_ENT"), existing_data_behavior = "overwrite")
 ```
 
 ### Reading parquet
@@ -284,7 +284,7 @@ table <- arrow::Table$create(selected_clean)
 
 output_dir <- here("data", "processed", "parquet_data_coords")
 
-arrow::write_dataset(table, output_dir, partitioning = c("NOM_ENT", "ENTIDAD"), existing_data_behavior = "overwrite")
+arrow::write_dataset(table, output_dir, partitioning = c("NOM_ENT"), existing_data_behavior = "overwrite")
 ```
 
 ### Verify unique cities per State
