@@ -22,47 +22,42 @@ ui <- dashboardPage(
   dashboardBody(
     fluidRow(
       box(
-        title = "Map",
+        title = tags$h3("Map"),
         status = "primary",
         plotOutput("map_plot")
       ),
       box(
-        title = "Population Pyramid",
+        title = tags$h3("Population Pyramid"),
         status = "primary",
         plotOutput("population_pyramid")
       )
     ),
     fluidRow(
       box(
-        title = "Total Male Population",
+        title = tags$h3("Average number of children born alive"),
         status = "primary",
-        textOutput("total_male_population")
+        textOutput("children_born_alive"),
+        style = "font-size: 16px;"
       ),
       box(
-        title = "Total Population",
+        title = tags$h3("Total Population"),
         status = "primary",
-        textOutput("population_card")
+        textOutput("population_card"),
+        style = "font-size: 16px;"
       )
     ),
     fluidRow(
       box(
-        title = "Birth in entity vs. birth in another entity",
+        title = tags$h3("Births in entity vs. births in another entity"),
         status = "primary",
-        textOutput("birth_origin")
+        plotOutput("birth_origin")
       ),
       box(
-        title = "Men to Women Ratio",
+        title = tags$h3("Men to Women Ratio"),
         status = "primary",
         plotOutput("men_women_ratio_pie")
       )
     )
-    # fluidRow(
-    #   box(
-    #     title = "Men to Women Ratio",
-    #     status = "primary",
-    #     plotOutput("men_women_ratio_pie")
-    #   ),
-    # )
   )
 )
 
@@ -153,7 +148,13 @@ server <- function(input, output, session) {
 
       gg <- gg + geom_polygon(data = filtered_df,
                               aes(x = long, y = lat, group = group),
-                              fill = "lightgray", color = "white")
+                              fill = "#00BFC4", color = "white") +
+                            labs(title = "Population Distribution Map", x = "Longitude", y = "Latitude") +
+                            theme_minimal() +
+                            theme(axis.title = element_text(size = 12),
+                                  axis.text = element_text(size = 10),
+                                  legend.title = element_text(size = 12),
+                                  legend.text = element_text(size = 10))
 
       # Check if locality dropdown is selected
       if (!is.null(input$locality_dropdown) && input$locality_dropdown != "") {
@@ -231,7 +232,17 @@ server <- function(input, output, session) {
         scale_y_continuous(labels = abs, limits = c(-1, 1) * max(population_long$Population)) +
         coord_flip() +
         theme_minimal() +
-        labs(x = "Age", y = "Population", fill = "Sex")
+        labs(x = "Age", y = "Population", fill = "Sex") +
+        theme(
+          text = element_text(size = 12),  
+          axis.title = element_text(size = 14),  
+          legend.title = element_text(size = 14),  
+          legend.text = element_text(size = 12),  
+          axis.text.x = element_text(size = 10),  
+          axis.text.y = element_text(size = 10)   
+        ) +
+        scale_y_continuous(labels = function(x) format(x, scientific = FALSE))  
+      
     }
     
     print(gg)
@@ -252,7 +263,28 @@ server <- function(input, output, session) {
     if (is.na(total_population)) {
       "Not Available"
     } else {
-      return(total_population)
+      comma_format <- format(total_population, big.mark = ",")
+      return(comma_format)
+    }
+  })
+  
+  # Render children born alive card
+  output$children_born_alive <- renderText({
+    req(input$state_dropdown, input$municipality_dropdown, input$locality_dropdown)
+    filter_df <- filter(
+      census_dataset(),
+      NOM_ENT == input$state_dropdown,
+      NOM_MUN == input$municipality_dropdown,
+      NOM_LOC == input$locality_dropdown
+    )
+    
+    total_population <- as.numeric(filter_df[1, "PROM_HNV"], na.rm = TRUE)
+    
+    if (is.na(total_population)) {
+      "Not Available"
+    } else {
+      comma_format <- format(total_population, big.mark = ",")
+      return(comma_format)
     }
   })
   
@@ -283,6 +315,7 @@ server <- function(input, output, session) {
       gg <- ggplot() + geom_text(aes(x = 0, y = 0, label = message), size = 10)
     } else {
     # Plot the pie chart
+      title <- paste("Men-to-Women Ratio:", round(men_to_women_ratio, 2))
       gg <- ggplot(ratio_df, aes(x = "", y = Ratio, fill = Category)) +
         geom_bar(stat = "identity", width = 1) +
         coord_polar(theta = "y") +
@@ -291,18 +324,23 @@ server <- function(input, output, session) {
         scale_fill_manual(values = c("#00BFC4", "#F8766D")) +
         geom_text(aes(label = paste0(round(Percentage), "%")), 
                   position = position_stack(vjust = 0.5),
-                  size = 5, color = "white", fontface = "bold")
+                  size = 7, color = "white", fontface = "bold") +
+        ggtitle(title) + 
+        theme(
+          plot.title = element_text(size = 16, face = "bold"),
+          legend.title = element_text(size = 14),  
+          legend.text = element_text(size = 12)
+        )
     
     }
     
     print(gg)
   })
   
-  # Render birth origin pie chart
+  # Render birth origin grouped bar chart
   output$birth_origin <- renderPlot({
     req(input$state_dropdown, input$municipality_dropdown, input$locality_dropdown)
     
-    # Filter census data based on selected inputs
     filter_df <- filter(
       census_dataset(),
       NOM_ENT == input$state_dropdown,
@@ -310,42 +348,46 @@ server <- function(input, output, session) {
       NOM_LOC == input$locality_dropdown
     )
     
-    # Extract birth data (as numeric)
     birth_local <- as.numeric(filter_df[1, "PNACENT"])
     birth_another <- as.numeric(filter_df[1, "PNACOE"])
     
-    # Debugging output
-    print(paste("Birth Local:", birth_local))
-    print(paste("Birth Another:", birth_another))
-    
-    # Check if birth data is available (not NA)
     if (is.na(birth_local) || is.na(birth_another)) {
       message <- "Data Not Available"
       gg <- ggplot() +
         geom_text(aes(x = 0, y = 0, label = message), size = 10)
     } else {
-      # Create ratio dataframe
       ratio_df <- tibble(
         Category = c("Local", "Other"),
-        Ratio = c(birth_local, birth_another)
+        Count = c(birth_local, birth_another)
       )
       
-      # Calculate percentages
-      ratio_df$Percentage <- ratio_df$Ratio / sum(ratio_df$Ratio) * 100
+      ratio_df <- ratio_df |> 
+        mutate(Percentage = (Count / sum(Count)) * 100)
       
-      # Plot the pie chart
-      gg <- ggplot(ratio_df, aes(x = "", y = Ratio, fill = Category)) +
-        geom_bar(stat = "identity", width = 1) +
-        coord_polar(theta = "y") +
-        theme_void() +
-        theme(legend.position = "bottom") +
-        scale_fill_manual(values = c("#00BFC4", "#F8766D")) +
+      gg <- ggplot(ratio_df, aes(x = Category, y = Count, fill = Category)) +
+        geom_bar(stat = "identity", width = 0.5) +
+        theme_minimal() +
+        labs(x = "Birth Origin", y = "Count", fill = "Category") +
         geom_text(aes(label = paste0(round(Percentage), "%")), 
                   position = position_stack(vjust = 0.5),
-                  size = 5, color = "white", fontface = "bold")
+                  size = 7, color = "white", fontface = "bold") +
+        theme(
+          text = element_text(size = 12),  
+          axis.title = element_text(size = 14),  
+          legend.title = element_text(size = 14),  
+          legend.text = element_text(size = 12),  
+          axis.text.x = element_text(size = 10),  
+          axis.text.y = element_text(size = 10),  
+          axis.text = element_text(size = 10, color = "black"),  
+          axis.line = element_line(color = "black"),  
+          panel.grid.major = element_blank(),  
+          panel.grid.minor = element_blank(),  
+          plot.title = element_text(size = 16, face = "bold"),  
+          plot.subtitle = element_text(size = 14) 
+        ) +
+        scale_y_continuous(labels = function(x) format(x, scientific = FALSE))
     }
     
-    # Print the plot
     print(gg)
   })
 }
