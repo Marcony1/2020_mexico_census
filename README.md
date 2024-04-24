@@ -10,3 +10,11 @@ Deployment: https://marcony1.shinyapps.io/2020_Mexico_Census/
 
 
 ### Installation instructions
+Perform the following steps to run the App on your desktop:
+
+1. Clone the `repo`.
+2. Open `RStudio` and verify if you have `renv` package installed, if not, run `install.packages("renv")` in R's console.
+3. Go to the `root` of the project directory (the local copy) and open/execute `"DSCI_532_individual-assignment_marcony1.Rproj"`.
+4. Once in RStudio, execute `renv::restore()` to install the necessary libraries/packages.
+5. Go to `src/` and open `app.R`.
+6. Run the `app`.
