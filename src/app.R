@@ -1,3 +1,6 @@
+options(shiny.port = 8050, shiny.autoreload = TRUE)
+
+
 library(shiny)
 
 
