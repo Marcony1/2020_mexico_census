@@ -71,22 +71,28 @@ server <- function(input, output, session) {
   
   # Import states names
   states <- reactive({
+    # Personal
+    # file_path <- "https://raw.githubusercontent.com/Marcony1/2020_mexico_census/master/data/processed/entity_names.csv?token=GHSAT0AAAAAACQDL6ESTHY43EYNRJPGXVPIZRJJDVQ"
     file_path <- here("data", "processed", "entity_names.csv")
-      state_data <- read_csv(file_path)
-      state_data$NOM_ENT
-
+    state_data <- read_csv(file_path)
+    state_data$NOM_ENT
+    
   })
   
   # Import census data
   census_dataset <- reactive({
     open_dataset(here("data", "processed", "parquet_data_coords")) |>
       collect()
-   })
+    # Personal
+    # census <- read_csv("https://raw.githubusercontent.com/Marcony1/2020_mexico_census/master/data/processed/data_coords.csv?token=GHSAT0AAAAAACQDL6ETT5BCJCTLRLXXYCVYZRJJHDA")
+  })
   
-    # Import geographic information
-    geojson_file <- reactive({
-      geojsonio::geojson_read(here("data", "processed", "mexico.geojson"), what = "sp")
-    })
+  # Import geographic information
+  geojson_file <- reactive({
+    geojsonio::geojson_read(here("data", "processed", "mexico.geojson"), what = "sp")
+    # Personal
+    # geojsonio::geojson_read("https://raw.githubusercontent.com/Marcony1/2020_mexico_census/master/data/processed/mexico.geojson?token=GHSAT0AAAAAACQDL6ESCDIW2IICELALDOHIZRJJFOA", what = "sp")
+  })
   
   # Filtering census data by current state
   filtered_data <- reactive({
@@ -132,51 +138,51 @@ server <- function(input, output, session) {
   })
   
   # Plot map
-    output$map_plot <- renderPlot({
-      req(input$state_dropdown)
-
-      # Initial plot setup
-      gg <- ggplot() +
-        theme_void() +
-        coord_map()
-
-      if (input$state_dropdown == "Total nacional") {
-        filtered_df <- geojson_file()
-      } else {
-        filtered_df <- geojson_file() |>
-          filter(name == input$state_dropdown)
+  output$map_plot <- renderPlot({
+    req(input$state_dropdown)
+    
+    # Initial plot setup
+    gg <- ggplot() +
+      theme_void() +
+      coord_map()
+    
+    if (input$state_dropdown == "Total nacional") {
+      filtered_df <- geojson_file()
+    } else {
+      filtered_df <- geojson_file() |>
+        filter(name == input$state_dropdown)
+    }
+    
+    gg <- gg + geom_polygon(data = filtered_df,
+                            aes(x = long, y = lat, group = group),
+                            fill = "#00BFC4", color = "white") +
+      labs(title = "Population Distribution Map", x = "Longitude", y = "Latitude") +
+      theme_minimal() +
+      theme(axis.title = element_text(size = 12),
+            axis.text = element_text(size = 10),
+            legend.title = element_text(size = 12),
+            legend.text = element_text(size = 10))
+    
+    # Check if locality dropdown is selected
+    if (!is.null(input$locality_dropdown) && input$locality_dropdown != "") {
+      coord_df <- filter(census_dataset(),
+                         NOM_ENT == input$state_dropdown,
+                         NOM_MUN == input$municipality_dropdown,
+                         NOM_LOC == input$locality_dropdown)
+      
+      # Filter out invalid coordinates and extract the first row
+      if (nrow(coord_df) > 0 && !any(is.na(coord_df$longitude_decimal)) && !any(is.na(coord_df$latitude_decimal))) {
+        coordinates <- tibble(
+          long = coord_df$longitude_decimal[1],
+          lat = coord_df$latitude_decimal[1]
+        )
+        
+        gg <- gg + geom_point(data = coordinates, aes(x = long, y = lat), color = "red", size = 3)
       }
-
-      gg <- gg + geom_polygon(data = filtered_df,
-                              aes(x = long, y = lat, group = group),
-                              fill = "#00BFC4", color = "white") +
-                            labs(title = "Population Distribution Map", x = "Longitude", y = "Latitude") +
-                            theme_minimal() +
-                            theme(axis.title = element_text(size = 12),
-                                  axis.text = element_text(size = 10),
-                                  legend.title = element_text(size = 12),
-                                  legend.text = element_text(size = 10))
-
-      # Check if locality dropdown is selected
-      if (!is.null(input$locality_dropdown) && input$locality_dropdown != "") {
-        coord_df <- filter(census_dataset(),
-                           NOM_ENT == input$state_dropdown,
-                           NOM_MUN == input$municipality_dropdown,
-                           NOM_LOC == input$locality_dropdown)
-
-        # Filter out invalid coordinates and extract the first row
-        if (nrow(coord_df) > 0 && !any(is.na(coord_df$longitude_decimal)) && !any(is.na(coord_df$latitude_decimal))) {
-          coordinates <- tibble(
-            long = coord_df$longitude_decimal[1],
-            lat = coord_df$latitude_decimal[1]
-          )
-
-          gg <- gg + geom_point(data = coordinates, aes(x = long, y = lat), color = "red", size = 3)
-        }
-      }
-
-      print(gg)
-    })
+    }
+    
+    print(gg)
+  })
   
   # Render population pyramid
   output$population_pyramid <- renderPlot({
@@ -315,7 +321,7 @@ server <- function(input, output, session) {
       message <- "Not Available"
       gg <- ggplot() + geom_text(aes(x = 0, y = 0, label = message), size = 10)
     } else {
-    # Plot the pie chart
+      # Plot the pie chart
       title <- paste("Men-to-Women Ratio:", round(men_to_women_ratio, 2))
       gg <- ggplot(ratio_df, aes(x = "", y = Ratio, fill = Category)) +
         geom_bar(stat = "identity", width = 1) +
@@ -332,7 +338,7 @@ server <- function(input, output, session) {
           legend.title = element_text(size = 14),  
           legend.text = element_text(size = 12)
         )
-    
+      
     }
     
     print(gg)
