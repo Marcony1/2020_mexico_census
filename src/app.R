@@ -72,10 +72,10 @@ server <- function(input, output, session) {
   # Import states names
   states <- reactive({
     # Personal
-    file_path <- "https://raw.githubusercontent.com/Marcony1/2020_mexico_census/master/data/processed/entity_names.csv?token=GHSAT0AAAAAACQDL6ESTHY43EYNRJPGXVPIZRJJDVQ"
+    # file_path <- "https://raw.githubusercontent.com/Marcony1/2020_mexico_census/master/data/processed/entity_names.csv?token=GHSAT0AAAAAACQDL6ESTHY43EYNRJPGXVPIZRJJDVQ"
     # UBC
     # file_path <- "https://raw.github.ubc.ca/MDS-2023-24/DSCI_532_individual-assignment_marcony1/master/data/processed/entity_names.csv?token=GHSAT0AAAAAAAAACLO4KRTK56KAAYK3ZMGQZRJHJBA"
-    # file_path <- here("data", "processed", "entity_names.csv")
+    file_path <- here("data", "processed", "entity_names.csv")
       state_data <- read_csv(file_path)
       state_data$NOM_ENT
 
@@ -83,11 +83,11 @@ server <- function(input, output, session) {
   
   # Import census data
   census_dataset <- reactive({
-    # open_dataset(here("data", "processed", "parquet_data_coords")) |>
-    #   collect()
+    open_dataset(here("data", "processed", "parquet_data_coords")) |>
+      collect()
     
     # Personal
-    census <- read_csv("https://raw.githubusercontent.com/Marcony1/2020_mexico_census/master/data/processed/data_coords.csv?token=GHSAT0AAAAAACQDL6ETT5BCJCTLRLXXYCVYZRJJHDA")
+    # census <- read_csv("https://raw.githubusercontent.com/Marcony1/2020_mexico_census/master/data/processed/data_coords.csv?token=GHSAT0AAAAAACQDL6ETT5BCJCTLRLXXYCVYZRJJHDA")
     
     
     # UBC
@@ -102,9 +102,9 @@ server <- function(input, output, session) {
   
     # Import geographic information
     geojson_file <- reactive({
-      # geojsonio::geojson_read(here("data", "processed", "mexico.geojson"), what = "sp")
+      geojsonio::geojson_read(here("data", "processed", "mexico.geojson"), what = "sp")
       # Personal
-      geojsonio::geojson_read("https://raw.githubusercontent.com/Marcony1/2020_mexico_census/master/data/processed/mexico.geojson?token=GHSAT0AAAAAACQDL6ESCDIW2IICELALDOHIZRJJFOA", what = "sp")
+      # geojsonio::geojson_read("https://raw.githubusercontent.com/Marcony1/2020_mexico_census/master/data/processed/mexico.geojson?token=GHSAT0AAAAAACQDL6ESCDIW2IICELALDOHIZRJJFOA", what = "sp")
       # UBC
       # geojsonio::geojson_read("https://raw.github.ubc.ca/MDS-2023-24/DSCI_532_individual-assignment_marcony1/master/data/processed/mexico.geojson?token=GHSAT0AAAAAAAAACLO4PRPXDBZULOOUAMO4ZRJHTEA", what = "sp")
           })
