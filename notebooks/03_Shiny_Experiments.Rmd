@@ -18,15 +18,6 @@ library(arrow)
 ### Reading data
 
 ```{r}
-census_data <- open_dataset(here("data", "processed", "parquet_data_coords"))$data
-census_data
-```
-
-```{r}
-census_data
-```
-
-```{r}
 census_dataset <- open_dataset(here("data", "processed", "parquet_data_coords"))
 census_dataset
 
@@ -44,4 +35,40 @@ pueb_norm
 
 ```{r}
 unique(pueb_norm$NOM_MUN)
+```
+
+### Example
+
+```{r}
+extract_coordinates <- function(data, municipality, locality) {
+  selected_location <- data |> 
+    filter(NOM_MUN == municipality, NOM_LOC == locality)
+  
+  coordinates <- tibble(
+    long = selected_location$longitude_decimal,
+    lat = selected_location$latitude_decimal
+  )
+  
+  return(coordinates)
+}
+
+
+municipality <- "Acajete"
+locality <- "Santa Isabel Tepetzala"
+
+red_point <- extract_coordinates(pueb_norm, municipality, locality) %>%
+  slice(1)
+
+# red_point <- data.frame(long = -98.2035, lat = 19.0414)
+
+filtered_geojson <- geojson_file |> 
+  filter(name == "Puebla")
+
+ggplot() +
+  geom_polygon(data = filtered_geojson,
+               aes(x = long, y = lat, group = group),
+               fill = "lightgray", color = "white") +
+  geom_point(data = red_point, aes(x = long, y = lat), color = "red", size = 3) +
+  theme_void() +
+  coord_map()
 ```
