@@ -13,6 +13,7 @@ date: 2020-04-23
 library(here)
 library(dplyr)
 library(arrow)
+library(tidyr)
 ```
 
 ### Reading data
@@ -328,13 +329,13 @@ basic_plot
 ### Card
 
 ```{r}
-# card <- census_dataset |>  
-#     filter(
-#       NOM_ENT == "Puebla",
-#       NOM_MUN == "Acateno",
-#       NOM_LOC == "Santa Andrea"
-#     ) |> 
-#   collect()
+card <- census_dataset |>
+    filter(
+      NOM_ENT == "Puebla",
+      NOM_MUN == "Acateno",
+      NOM_LOC == "Santa Andrea"
+    ) |>
+  collect()
     
     total_population <- as.numeric(card[1, c("POBTOT")], na.rm = TRUE)
     paste("Total Population:", total_population)

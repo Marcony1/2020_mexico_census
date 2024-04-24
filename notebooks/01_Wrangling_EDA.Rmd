@@ -113,7 +113,7 @@ print(entities_csv)
 ### Selecting rows that we'll analyze
 
 ```{r}
-rows_to_include <- c(1:12, 53:132, 136:140, 147, 155:211, 220:232)
+rows_to_include <- c(2, 4, 6:8, 10, 53:117)
 
 filtered_data <- clean_info_dict |> 
       filter(row_number() %in% rows_to_include) |> 
@@ -344,23 +344,23 @@ for(value in entities_csv) {
 }
 ```
 
-```{r}
-for(value in entities_csv) {
-  
-  read_dfs <- open_dataset(here("data", "processed", "parquet_data")) |>
-    filter(NOM_ENT==value) |>
-    collect()
-  
-    read_dfs$LOC_MUN <- paste(read_dfs$LOC, read_dfs$MUN, sep = "_")
-
-  if (nrow(read_dfs) == length(unique(read_dfs$LOC_MUN))) {
-    print(paste("Localities Unique", value))
-  } else {
-        print(paste("NOT OK", value, nrow(read_dfs), "<>", length(unique(read_dfs$LOC_MUN))))
-
-  }
-
-}
+```{# {r}
+# for(value in entities_csv) {
+#   
+#   read_dfs <- open_dataset(here("data", "processed", "parquet_data")) |>
+#     filter(NOM_ENT==value) |>
+#     collect()
+#   
+#     read_dfs$LOC_MUN <- paste(read_dfs$LOC, read_dfs$MUN, sep = "_")
+# 
+#   if (nrow(read_dfs) == length(unique(read_dfs$LOC_MUN))) {
+#     print(paste("Localities Unique", value))
+#   } else {
+#         print(paste("NOT OK", value, nrow(read_dfs), "<>", length(unique(read_dfs$LOC_MUN))))
+# 
+#   }
+# 
+# }
 ```
 
 ```{r}
